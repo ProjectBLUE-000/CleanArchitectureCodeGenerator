@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -9,11 +8,11 @@ namespace Editor
     public class CleanArchitectureProjectGenerator : EditorWindow
     {
         
-        [MenuItem("stu/Clean Architecture Project Generator")]
+        [MenuItem("ProjectBLUE/Architecture/Clean Architecture Project Generator")]
         private static void ShowWindow()
         {
             var window = GetWindow<CleanArchitectureProjectGenerator>();
-            window.titleContent = new GUIContent("Clean Architecture Project Generator");
+            window.titleContent = new GUIContent("CA Project Generator");
             window.Show();
         }
 
@@ -37,6 +36,8 @@ namespace Editor
 
         private void GenerateAssemblyDefinitions()
         {
+
+            step = 0;
             
             // Model
             var modelGuid = Generate("Domain/Model", new List<string>());
@@ -45,7 +46,7 @@ namespace Editor
             var infraGuid = Generate("Infrastracture",  new List<string>());
             
             // DataStoreInterface
-            var dataStoreInterfaceGuid = Generate("Repository/DataStoreInterfaces", 
+            var dataStoreInterfaceGuid = Generate("Data/Repository/DataStoreInterfaces", 
                 new List<string>() {modelGuid, infraGuid});
             // ViewInterface
             var viewInterfaceGuid = Generate("Presentation/Presenter/ViewInterfaces",

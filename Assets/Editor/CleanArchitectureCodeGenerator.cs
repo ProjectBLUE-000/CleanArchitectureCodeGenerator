@@ -8,11 +8,11 @@ namespace Editor
     public class CleanArchitectureCodeGenerator : EditorWindow
     {
 
-        [MenuItem("ProjectBLUE/Clean Architecture Code Generator")]
+        [MenuItem("ProjectBLUE/Architecture/Clean Architecture Code Generator")]
         private static void ShowWindow()
         {
             var window = GetWindow<CleanArchitectureCodeGenerator>();
-            window.titleContent = new GUIContent("Clean Architecture Generator");
+            window.titleContent = new GUIContent("CA Code Generator");
             window.Show();
         }
 
@@ -39,8 +39,12 @@ namespace Editor
         private void GenerateCodes()
         {
 
-            // View
             step = 0;
+            
+            // Model
+            Generate(new ModelTemplate(nameSpace, className));
+            
+            // View
             Generate(new ViewTemplate(nameSpace, className));
             
             // Presenter
@@ -64,7 +68,7 @@ namespace Editor
 
         private void Generate(CodeTemplateBase codeTemplate)
         {
-            EditorUtility.DisplayProgressBar ("Generating CA codes...", codeTemplate.FileName, step/9f);
+            EditorUtility.DisplayProgressBar ("Generating CA codes...", codeTemplate.FileName, step/10f);
             
             var folderPath = Path.GetDirectoryName(Path.Combine(baseScriptPath+"/", codeTemplate.FolderPath));
             CreateFolder(folderPath);
