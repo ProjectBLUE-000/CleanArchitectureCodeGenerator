@@ -1,151 +1,111 @@
-﻿using System.Collections.Generic;
-using System.IO;
+﻿using System;
 using UnityEditor;
 using UnityEngine;
 
-namespace Editor
+namespace ProjectBlue.Generator
 {
+
     public class CleanArchitectureProjectGenerator : EditorWindow
     {
         
-        [MenuItem("ProjectBLUE/Architecture/Clean Architecture Project Generator")]
+        [MenuItem("ProjectBLUE/Architecture/Clean Architecture Generator")]
         private static void ShowWindow()
         {
             var window = GetWindow<CleanArchitectureProjectGenerator>();
-            window.titleContent = new GUIContent("CA Project Generator");
+            window.titleContent = new GUIContent("CA Generator");
             window.Show();
         }
 
-        private int step = 0;
+        private ArchitectureType _archType = ArchitectureType.Pattern1;
+        private string _baseScriptPath;
+        private string _nameSpaceName;
+        private string _className;
         
-        private string baseScriptPath = "Assets/Scripts";
-        private string nameSpaceName = "ProjectBlue.Product";
-
         private void OnGUI()
         {
 
-            baseScriptPath = EditorGUILayout.TextField("Base script path", baseScriptPath);
-            nameSpaceName = EditorGUILayout.TextField("Namespace name", nameSpaceName);
-            
-            if (GUILayout.Button("Generate"))
+            using (new EditorGUILayout.VerticalScope(GUI.skin.box))
             {
-                GenerateAssemblyDefinitions();
+                _archType = (ArchitectureType)EditorGUILayout.EnumPopup("Architecture Type", _archType);
             }
             
+            using (new EditorGUILayout.VerticalScope(GUI.skin.box))
+            {
+                _baseScriptPath = EditorGUILayout.TextField("Base script path", _baseScriptPath);
+                _nameSpaceName = EditorGUILayout.TextField("Namespace name", _nameSpaceName);
+                
+                if (GUILayout.Button("Build Project"))
+                {
+                    GenerateAssemblyDefinitions();
+                }
+            }
+            
+            GUILayout.Space(10);
+            
+            using (new EditorGUILayout.VerticalScope(GUI.skin.box))
+            {
+
+                EditorGUI.BeginDisabledGroup(_archType == ArchitectureType.Pattern2);
+                
+                _className = EditorGUILayout.TextField("Class Name", _className);
+            
+                if (GUILayout.Button("Generate Codes"))
+                {
+                    GenerateCodes();
+                }
+                
+                EditorGUI.EndDisabledGroup();
+            }
+            
+            
+        }
+
+        private void OnEnable()
+        {
+            _archType = (ArchitectureType)Enum.ToObject(typeof(ArchitectureType), EditorPrefs.GetInt("CAGEN_ARCHTYPE", 0));
+            _baseScriptPath = EditorPrefs.GetString("CAGEN_BASEPATH", "Assets/Scripts");
+            _nameSpaceName = EditorPrefs.GetString("CAGEN_NAMESPACE", "ProjectBlue.ProductName");
+            _className = EditorPrefs.GetString("CAGEN_CLASSNAME", "SampleClass");
+        }
+
+        private void OnDestroy()
+        {
+            Save();
+        }
+
+        private void Save()
+        {
+            EditorPrefs.SetInt("CAGEN_ARCHTYPE", (int)_archType);
+            EditorPrefs.SetString("CAGEN_BASEPATH", _baseScriptPath);
+            EditorPrefs.SetString("CAGEN_NAMESPACE", _nameSpaceName);
+            EditorPrefs.SetString("CAGEN_CLASSNAME", _className);
         }
 
         private void GenerateAssemblyDefinitions()
         {
+            Save();
 
-            step = 0;
-            
-            // Model
-            var modelGuid = Generate("Domain/Model", new List<string>());
-            
-            // Infrastructure
-            var infraGuid = Generate("Infrastracture",  new List<string>());
-            
-            // DataStoreInterface
-            var dataStoreInterfaceGuid = Generate("Data/Repository/DataStoreInterfaces", 
-                new List<string>() {modelGuid, infraGuid});
-            // ViewInterface
-            var viewInterfaceGuid = Generate("Presentation/Presenter/ViewInterfaces",
-                new List<string>() {modelGuid, infraGuid});
-            // RepositoryInterface
-            var repositoryInterfaceGuid = Generate("Domain/UseCase/RepositoryInterfaces",
-                new List<string>() {modelGuid, infraGuid});
-            // PresenterInterface
-            var presenterInterfaceGuid = Generate("Domain/UseCase/PresenterInterfaces",
-                new List<string>() {modelGuid, infraGuid});
-            
-            // DataStore
-            var dataStoreGuid = Generate("Data/DataStore", 
-                new List<string>() {modelGuid, infraGuid, dataStoreInterfaceGuid});
-            
-            // Repository
-            var repositoryGuid = Generate("Data/Repository", 
-                new List<string>() {modelGuid, infraGuid, dataStoreInterfaceGuid, repositoryInterfaceGuid});
-            
-            // View
-            var viewGuid = Generate("Presentation/View",
-                new List<string>() {modelGuid, infraGuid, viewInterfaceGuid});
-
-            // Presenter
-            var presenterGuid = Generate("Presentation/Presenter",
-                new List<string>() {modelGuid, infraGuid, viewInterfaceGuid, presenterInterfaceGuid});
-
-            // UseCase
-            var useCaseGuid = Generate("Domain/UseCase",
-                new List<string>() {modelGuid, infraGuid, viewInterfaceGuid, presenterInterfaceGuid, repositoryInterfaceGuid});
-            
-
-            EditorUtility.ClearProgressBar();
-        }
-
-        private string Generate(string directoryPath, List<string> referenceGuids)
-        {
-            
-            directoryPath = directoryPath.EndsWith("/") ? directoryPath : $"{directoryPath}/";
-
-            var fileName = directoryPath.Substring(0,directoryPath.Length-1).Replace("/", ".");
-            Debug.Log(fileName);
-
-            fileName = string.IsNullOrEmpty(nameSpaceName) ? fileName : $"{nameSpaceName}.{fileName}";
-            
-            EditorUtility.DisplayProgressBar ("Generating CA project...", fileName, step/11f);
-
-            var folderPath = Path.GetDirectoryName(Path.Combine(baseScriptPath+"/", directoryPath));
-            CreateFolder(folderPath);
-
-            var referenceGuidStr = "";
-            for (var i = 0; i < referenceGuids.Count; i++)
+            if (_archType == ArchitectureType.Pattern1)
             {
-                referenceGuidStr += $"\"GUID:{referenceGuids[i]}\"";
-                if (i != referenceGuids.Count - 1) referenceGuidStr += ",\n";
+                ProjectGenerator.Pattern1.Run(_baseScriptPath, _nameSpaceName);
             }
-            
-            var generatedText = asmdefTemplate.Replace("##FILE_NAME##", fileName).Replace("##REFERENCE##",referenceGuidStr);
-            
-            var assetPath = AssetDatabase.GenerateUniqueAssetPath(Path.Combine(folderPath, fileName+".asmdef"));
-            File.WriteAllText(assetPath, generatedText);
-            AssetDatabase.Refresh();
+            else
+            {
+                ProjectGenerator.Pattern2.Run(_baseScriptPath, _nameSpaceName);
+            }
+        }
 
-            step++;
-            
-            return AssetDatabase.AssetPathToGUID(assetPath);
-        }
-        
-        
-        private string asmdefTemplate = @"
-{
-    ""name"": ""##FILE_NAME##"",
-    ""references"": [
-        ##REFERENCE##
-    ],
-    ""includePlatforms"": [],
-    ""excludePlatforms"": [],
-    ""allowUnsafeCode"": false,
-    ""overrideReferences"": false,
-    ""precompiledReferences"": [],
-    ""autoReferenced"": false,
-    ""defineConstraints"": [],
-    ""versionDefines"": [],
-    ""noEngineReferences"": false
-}
-";
-        
-        private static void CreateFolder(string path)
+        private void GenerateCodes()
         {
-            var target = "";
-            var splitChars = new char[]{ Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
-            foreach (var dir in path.Split(splitChars)) {
-                var parent = target;
-                target = Path.Combine(target, dir);
-                if (!AssetDatabase.IsValidFolder(target)) {
-                    AssetDatabase.CreateFolder(parent, dir);
-                }
+            
+            Save();
+
+            if (_archType == ArchitectureType.Pattern1)
+            {
+                CodeGenerator.Pattern1.Run(_baseScriptPath, _nameSpaceName, _className);
             }
+            
         }
-        
+
     }
 }
