@@ -37,7 +37,12 @@ namespace ProjectBlue.ProjectGenerator
             directoryPath = directoryPath.EndsWith("/") ? directoryPath : $"{directoryPath}/";
 
             var fileName = directoryPath.Substring(0,directoryPath.Length-1).Replace("/", ".");
-            Debug.Log(fileName);
+
+            // remove prefix for filename
+            if (fileName.Split('_').Length == 2)
+            {
+                fileName = fileName.Split('_')[1];
+            }
 
             fileName = string.IsNullOrEmpty(nameSpaceName) ? fileName : $"{nameSpaceName}.{fileName}";
 
@@ -51,7 +56,7 @@ namespace ProjectBlue.ProjectGenerator
             return AssetDatabase.AssetPathToGUID(assetPath);
         }
         
-        private static void CreateFolder(string path)
+        public static void CreateFolder(string path)
         {
             var target = "";
             var splitChars = new char[]{ Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar };
