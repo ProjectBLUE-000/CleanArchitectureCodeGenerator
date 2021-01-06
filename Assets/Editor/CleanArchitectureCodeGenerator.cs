@@ -5,6 +5,12 @@ using UnityEngine;
 
 namespace Editor
 {
+
+    public enum ArchitectureType
+    {
+        Pattern1, Pattern2
+    }
+    
     public class CleanArchitectureCodeGenerator : EditorWindow
     {
 
@@ -19,6 +25,7 @@ namespace Editor
         private string baseScriptPath = "Assets/Scripts";
         private string className = "SampleClass";
         private string nameSpace = "SampleNamespace";
+        private ArchitectureType archType = ArchitectureType.Pattern1;
         
         private void OnGUI()
         {
@@ -26,6 +33,8 @@ namespace Editor
             baseScriptPath = EditorGUILayout.TextField("Base Script Path", baseScriptPath);
             nameSpace = EditorGUILayout.TextField("Namespace", nameSpace);
             className = EditorGUILayout.TextField("Class Name", className);
+
+            archType = (ArchitectureType)EditorGUILayout.EnumPopup("Architecture Type", archType);
 
             if (GUILayout.Button("Generate"))
             {
@@ -39,6 +48,19 @@ namespace Editor
         private void GenerateCodes()
         {
 
+            if (archType == ArchitectureType.Pattern1)
+            {
+                Pattern1();
+            }
+            else
+            {
+                Pattern2();
+            }
+            
+        }
+
+        private void Pattern1()
+        {
             step = 0;
             
             // Model
@@ -64,6 +86,11 @@ namespace Editor
             Generate(new UseCaseTemplate(nameSpace, className));
             
             EditorUtility.ClearProgressBar();
+        }
+
+        private void Pattern2()
+        {
+            
         }
 
         private void Generate(CodeTemplateBase codeTemplate)
