@@ -1,6 +1,8 @@
 {
-    "name": "ProjectBlue.CleanArchitectureCodeGenerator",
-    "references": [],
+    "name": "ProjectBlue.CleanArchitectureCodeGenerator.Editor",
+    "references": [
+        "GUID:2155c2240c76ab24393d56f10e747dc5"
+    ],
     "includePlatforms": [
         "Editor"
     ],
